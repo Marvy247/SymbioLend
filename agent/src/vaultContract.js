@@ -35,23 +35,22 @@ export class VaultContract {
    * WDK account's underlying wallet.
    */
   async addSigner(agentName, wdkAccount) {
-    // WDK EVM account exposes _account.privateKey via the internal wallet
-    const pk = wdkAccount._account?._wallet?.privateKey
-      || wdkAccount._account?.privateKey
-      || null
+    try {
+      // WDK EVM account: _account is the HD node, privateKeyBuffer is a Buffer
+      const pkBuf = wdkAccount._account?.privateKeyBuffer
+      if (!pkBuf) throw new Error('no privateKeyBuffer')
 
-    if (!pk) {
-      console.warn(`[VaultContract] No private key accessible for ${agentName} — using read-only mode`)
+      const pk     = '0x' + Buffer.from(pkBuf).toString('hex')
+      const signer   = new ethers.Wallet(pk, this.provider)
+      const contract = new ethers.Contract(this.address, ABI, signer)
+      this._writers.set(agentName, contract)
+      this._readers.set(agentName, contract)
+      console.log(`[VaultContract] ${agentName} signer ready (${signer.address})`)
+    } catch (err) {
+      console.warn(`[VaultContract] ${agentName} read-only: ${err.message}`)
       const ro = new ethers.Contract(this.address, ABI, this.provider)
       this._readers.set(agentName, ro)
-      return
     }
-
-    const signer = new ethers.Wallet(pk, this.provider)
-    const contract = new ethers.Contract(this.address, ABI, signer)
-    this._writers.set(agentName, contract)
-    this._readers.set(agentName, contract)
-    console.log(`[VaultContract] ${agentName} signer registered (${signer.address})`)
   }
 
   reader(agentName) {
