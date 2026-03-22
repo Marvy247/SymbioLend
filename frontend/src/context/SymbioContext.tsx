@@ -8,7 +8,7 @@ interface Loan {
   amount: number
   status: 'pending' | 'active' | 'repaid' | 'defaulted' | 'rejected'
   terms?: { interestBps: number; durationDays: number; collateralPct: number; reasoning: string }
-  scoring?: { pd: number; interestBps: number }
+  scoring?: { pd: number; interestBps: number; grade?: string }
   rationale?: { purpose: string; expectedReturn: string; repaymentPlan: string }
   repaid?: number
   txHash?: string
