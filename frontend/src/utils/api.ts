@@ -1,19 +1,10 @@
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-export async function fetchState() {
-  const r = await fetch(`${API}/api/state`)
-  return r.json()
-}
-
-export async function triggerTick() {
-  const r = await fetch(`${API}/api/tick`, { method: 'POST' })
-  return r.json()
-}
-
-export function createEventSource(onEvent: (e: any) => void) {
-  const es = new EventSource(`${API}/api/events`)
-  es.onmessage = (e: MessageEvent) => {
-    try { onEvent(JSON.parse(e.data)) } catch {}
-  }
-  return es
+export const api = {
+  state:   () => fetch(`${BASE}/api/state`).then(r => r.json()),
+  loans:   () => fetch(`${BASE}/api/loans`).then(r => r.json()),
+  agents:  () => fetch(`${BASE}/api/agents`).then(r => r.json()),
+  market:  () => fetch(`${BASE}/api/market`).then(r => r.json()),
+  tick:    () => fetch(`${BASE}/api/tick`, { method: 'POST' }).then(r => r.json()),
+  events:  () => new EventSource(`${BASE}/api/events`),
 }

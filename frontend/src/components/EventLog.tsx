@@ -1,54 +1,45 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { useSwarm } from '../context/SwarmContext'
+import { useSymbio } from '../context/SymbioContext'
 
 const EVENT_ICON: Record<string, string> = {
-  agent_joined:      '🤖',
-  proposal_created:  '📋',
-  vote_cast:         '🗳️',
-  proposal_executed: '⚡',
-  proposal_rejected: '❌',
-  agent_rewarded:    '🏆',
-  agent_slashed:     '⚠️',
-  cycle_complete:    '🔄',
+  loan_requested: '📋',
+  loan_funded:    '💰',
+  loan_rejected:  '❌',
+  repayment:      '✅',
+  default:        '⚠️',
 }
 
 export function EventLog() {
-  const { state } = useSwarm()
-  if (!state) return null
-
-  const events = [...state.eventLog].reverse().slice(0, 30)
+  const { events } = useSymbio()
 
   return (
-    <div className="space-y-1.5 max-h-96 overflow-y-auto no-scrollbar">
-      <AnimatePresence initial={false}>
+    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-white">Live Events</h2>
+        <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          live
+        </span>
+      </div>
+      <div className="divide-y divide-slate-700/50 max-h-64 overflow-y-auto">
+        {events.length === 0 && (
+          <div className="px-4 py-6 text-center text-slate-500 text-sm">Waiting for events…</div>
+        )}
         {events.map((e, i) => (
-          <motion.div
-            key={`${e.ts}-${i}`}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-start gap-2 text-xs py-1.5 border-b border-app-border/50 last:border-0"
-          >
-            <span className="text-base shrink-0">{EVENT_ICON[e.type] || '•'}</span>
+          <div key={i} className="px-4 py-2 flex items-start gap-2 text-xs">
+            <span>{EVENT_ICON[e.type] ?? '•'}</span>
             <div className="flex-1 min-w-0">
-              <span className="font-medium text-text-dim capitalize">{e.type.replace(/_/g, ' ')}</span>
-              {e.data?.description && (
-                <p className="text-text-pale truncate">{e.data.description}</p>
-              )}
-              {e.data?.name && !e.data?.description && (
-                <p className="text-text-pale">Agent {e.data.name}</p>
-              )}
-              {e.data?.voter && (
-                <p className="text-text-pale">{e.data.voter} → {e.data.support ? '✅' : '❌'}</p>
-              )}
+              <span className="text-slate-300">
+                {e.type === 'loan_requested' && `${e.borrower} requested $${e.amount?.toLocaleString()} (${e.agentType})`}
+                {e.type === 'loan_funded'    && `${e.lender} funded $${e.amount?.toLocaleString()} → ${e.borrower} @ ${(e.terms?.interestBps/100).toFixed(1)}%`}
+                {e.type === 'loan_rejected'  && `${e.borrower} rejected — ${e.reason}`}
+                {e.type === 'repayment'      && `${e.borrower} repaid $${e.amount?.toLocaleString()}${e.fullRepayment ? ' (FULL)' : ''}`}
+                {e.type === 'default'        && `${e.borrower} defaulted on loan #${e.loanId}`}
+              </span>
             </div>
-            <span className="text-text-pale shrink-0">
-              {new Date(e.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </span>
-          </motion.div>
+            <span className="text-slate-600 shrink-0">{new Date(e.ts).toLocaleTimeString()}</span>
+          </div>
         ))}
-      </AnimatePresence>
+      </div>
     </div>
   )
 }

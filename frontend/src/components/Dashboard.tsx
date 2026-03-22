@@ -1,114 +1,66 @@
-import { motion } from 'framer-motion'
-import { useSwarm } from '../context/SwarmContext'
-import { AgentGrid } from '../components/AgentGrid'
-import { ProposalFeed } from '../components/ProposalFeed'
-import { TreasuryPanel } from '../components/TreasuryPanel'
-import { EventLog } from '../components/EventLog'
-import { AllocationHistory } from '../components/AllocationHistory'
+import { useSymbio } from '../context/SymbioContext'
 
-const SEPOLIA = 'https://sepolia.etherscan.io'
+const CONTRACT = import.meta.env.VITE_CONTRACT_ADDRESS || ''
+const SEPOLIA   = 'https://sepolia.etherscan.io'
 
 export function Dashboard() {
-  const { state, connected, tick } = useSwarm()
+  const { state, triggerTick } = useSymbio()
+  const s = state?.stats
 
-  const pending  = state?.proposals.filter(p => p.status === 'pending').length  ?? 0
-  const executed = state?.proposals.filter(p => p.status === 'executed').length ?? 0
-  const onChain  = state?.proposals.filter((p: any) => p.txHash).length ?? 0
+  const cards = [
+    { label: 'Total Loans',    value: s?.totalLoans    ?? '—', color: 'text-violet-400' },
+    { label: 'Active',         value: s?.activeLoans   ?? '—', color: 'text-blue-400' },
+    { label: 'Repaid',         value: s?.repaidLoans   ?? '—', color: 'text-emerald-400' },
+    { label: 'Defaulted',      value: s?.defaultedLoans ?? '—', color: 'text-red-400' },
+    { label: 'Capital Deployed', value: s ? `$${s.totalDeployed.toLocaleString()}` : '—', color: 'text-amber-400' },
+    { label: 'On-chain Txs',   value: state?.txCount   ?? '—', color: 'text-cyan-400' },
+  ]
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif font-bold text-4xl text-text-main">
-            Swarm <span className="italic text-accent-indigo">Dashboard</span>
-          </h1>
-          <div className="flex flex-wrap items-center gap-3 mt-2">
-            <span className={`flex items-center gap-1.5 text-sm font-medium ${connected ? 'text-emerald-600' : 'text-red-400'}`}>
-              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-              {connected ? 'Live' : 'Connecting…'}
-            </span>
-            <span className="text-text-pale text-sm">Cycle #{state?.cycle ?? 0}</span>
-            {state?.contractAddress && state.contractAddress !== '0x0000000000000000000000000000000000000000' && (
-              <a
-                href={`${SEPOLIA}/address/${state.contractAddress}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-mono text-accent-indigo hover:underline bg-accent-indigo/5 px-2 py-1 rounded-lg"
-              >
-                ⛓ OrionVault on Sepolia ↗
-              </a>
-            )}
-          </div>
+          <h1 className="text-2xl font-bold text-white">SymbioLend</h1>
+          <p className="text-sm text-slate-400">Agent-to-Agent Lending Protocol · Sepolia</p>
         </div>
-        <button
-          onClick={tick}
-          className="shrink-0 px-5 py-2.5 bg-accent-indigo text-white rounded-xl font-medium hover:bg-accent-indigo-hover transition-colors text-sm"
-        >
-          ⚡ Force Cycle
-        </button>
+        <div className="flex gap-3 items-center">
+          {CONTRACT && (
+            <a href={`${SEPOLIA}/address/${CONTRACT}`} target="_blank" rel="noreferrer"
+               className="text-xs text-violet-400 hover:text-violet-300 font-mono">
+              {CONTRACT.slice(0,6)}…{CONTRACT.slice(-4)} ↗
+            </a>
+          )}
+          <button onClick={triggerTick}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm rounded-lg transition-colors">
+            Force Cycle
+          </button>
+        </div>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Active Agents',     value: state?.agents.length ?? 0,  icon: '🤖', color: '' },
-          { label: 'Pending Proposals', value: pending,                     icon: '📋', color: '' },
-          { label: 'Executed',          value: executed,                    icon: '⚡', color: 'text-emerald-600' },
-          { label: 'On-chain Txs',      value: onChain,                     icon: '⛓',  color: 'text-accent-indigo' },
-        ].map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07 }}
-            className="glass rounded-2xl p-5 border border-app-border"
-          >
-            <div className="text-2xl mb-2">{s.icon}</div>
-            <p className={`text-2xl font-bold ${s.color || 'text-text-main'}`}>{s.value}</p>
-            <p className="text-xs text-text-pale mt-1">{s.label}</p>
-          </motion.div>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {cards.map(c => (
+          <div key={c.label} className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <div className={`text-2xl font-bold ${c.color}`}>{c.value}</div>
+            <div className="text-xs text-slate-400 mt-1">{c.label}</div>
+          </div>
         ))}
       </div>
 
-      {/* Treasury & Market */}
-      <section>
-        <h2 className="font-serif font-bold text-2xl text-text-main mb-4">Treasury & Market</h2>
-        <TreasuryPanel />
-      </section>
-
-      {/* Agents */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-serif font-bold text-2xl text-text-main">Agent Swarm</h2>
-          <span className="text-sm text-text-pale">Sorted by reputation</span>
+      {/* Market bar */}
+      {state?.market && (
+        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex flex-wrap gap-6 text-sm">
+          <span className="text-slate-400">Market</span>
+          <span>ETH <span className="text-white font-mono">${state.market.ETH.toLocaleString()}</span></span>
+          <span>BTC <span className="text-white font-mono">${state.market.BTC.toLocaleString()}</span></span>
+          <span>XAUT <span className="text-white font-mono">${state.market.XAUT.toLocaleString()}</span></span>
+          <span>Volatility <span className={`font-mono ${state.market.volatility > 0.5 ? 'text-red-400' : state.market.volatility > 0.25 ? 'text-amber-400' : 'text-emerald-400'}`}>
+            {(state.market.volatility * 100).toFixed(0)}%
+          </span></span>
+          <span className="ml-auto text-slate-500">Cycle #{state.cycle}</span>
         </div>
-        <AgentGrid />
-      </section>
-
-      {/* Proposals + Events */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <section>
-          <h2 className="font-serif font-bold text-2xl text-text-main mb-4">Active Proposals</h2>
-          <div className="glass rounded-2xl p-5 border border-app-border">
-            <ProposalFeed />
-          </div>
-        </section>
-        <section>
-          <h2 className="font-serif font-bold text-2xl text-text-main mb-4">Live Event Feed</h2>
-          <div className="glass rounded-2xl p-5 border border-app-border">
-            <EventLog />
-          </div>
-        </section>
-      </div>
-
-      {/* Allocation history */}
-      <section>
-        <h2 className="font-serif font-bold text-2xl text-text-main mb-4">Executed Allocations</h2>
-        <div className="glass rounded-2xl p-5 border border-app-border">
-          <AllocationHistory />
-        </div>
-      </section>
+      )}
     </div>
   )
 }
