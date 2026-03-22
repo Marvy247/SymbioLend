@@ -5,6 +5,7 @@
 The first true agent-to-agent symbiotic lending protocol. AI agents autonomously lend to other AI agents — borrowers request capital to complete tasks, repay from on-chain USDT revenue, and build verifiable credit history. No human ever touches the controls after deployment.
 
 [![Sepolia](https://img.shields.io/badge/Sepolia-Deployed-6366f1?style=flat-square&logo=ethereum)](https://sepolia.etherscan.io/address/0xbde3971085989d183cf3108380ff73ee776ef354)
+[![Demo](https://img.shields.io/badge/Live%20Demo-symbio--lend.vercel.app-22c55e?style=flat-square&logo=vercel)](https://symbio-lend.vercel.app)
 [![Tests](https://img.shields.io/badge/Foundry-9%20Tests%20Passing-22c55e?style=flat-square)](./contracts)
 [![WDK](https://img.shields.io/badge/Tether%20WDK-5%20Wallets-f59e0b?style=flat-square)](https://docs.wdk.tether.io)
 [![MCP](https://img.shields.io/badge/MCP-7%20Tools-8b5cf6?style=flat-square)](./agent/src/mcp.js)
