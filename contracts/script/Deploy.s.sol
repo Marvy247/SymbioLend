@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.29;
 
-import "forge-std/Script.sol";
-import "../src/OrionVault.sol";
+import {Script} from "forge-std/Script.sol";
+import {SymbioLend} from "../src/SymbioLend.sol";
+import {MockUSDT} from "../src/MockUSDT.sol";
 
 contract Deploy is Script {
     function run() external {
         vm.startBroadcast();
-        OrionVault vault = new OrionVault();
-        console.log("OrionVault deployed at:", address(vault));
+        MockUSDT usdt = new MockUSDT();
+        SymbioLend lend = new SymbioLend();
+        lend.addToken(address(usdt));
         vm.stopBroadcast();
     }
 }
