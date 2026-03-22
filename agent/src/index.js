@@ -98,6 +98,23 @@ app.get('/api/loans', (_, res) => {
   res.json(engine ? [...engine.loans.values()] : [])
 })
 
+app.get('/api/zk/:borrower', async (req, res) => {
+  if (!engine) return res.status(503).json({ error: 'initializing' })
+  const { proveCreditScore, verifyProof } = await import('./zkCredit.js')
+  const agent = engine.borrowers.find(b => b.name === req.params.borrower)
+  if (!agent) return res.status(404).json({ error: 'agent not found' })
+  try {
+    const onChain = await engine.contract.getAgent(agent.address)
+    const score   = Number(onChain.creditScore)
+    const proof   = await proveCreditScore(score, 200)
+    if (!proof) return res.json({ available: false, reason: 'ZK keys not set up yet' })
+    const valid   = await verifyProof(proof.proof, proof.publicSignals)
+    res.json({ borrower: agent.name, creditScore: score, commitment: proof.commitment, minScore: 200, verified: valid, proof: proof.proof })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 app.get('/api/agents', (_, res) => {
   if (!engine) return res.json([])
   res.json([engine.lender, ...engine.borrowers])

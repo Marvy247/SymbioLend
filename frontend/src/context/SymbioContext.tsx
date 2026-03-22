@@ -12,6 +12,7 @@ interface Loan {
   rationale?: { purpose: string; expectedReturn: string; repaymentPlan: string }
   repaid?: number
   txHash?: string
+  zkProof?: { commitment: string; verified: boolean } | null
   requestedAt: number
 }
 

@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "mcp": "node src/mcp.js"
+    "mcp": "node src/mcp.js",
+    "zk:setup": "node -e \"import('./src/zkCredit.js').then(m => m.setupZK())\"",
+    "zk:export-verifier": "node export-verifier.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
@@ -15,10 +17,13 @@
     "@tetherto/wdk-pricing-bitfinex-http": "^1.0.0-beta.2",
     "@tetherto/wdk-wallet": "^1.0.0-beta.6",
     "@tetherto/wdk-wallet-evm": "^1.0.0-beta.8",
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ethers": "^6.16.0",
     "express": "^4.21.2",
+    "snarkjs": "^0.7.6",
     "zod": "^4.3.6"
   }
 }

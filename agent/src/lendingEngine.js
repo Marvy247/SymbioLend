@@ -1,5 +1,6 @@
 import { CreditEngine } from './creditEngine.js'
 import { negotiateLoanTerms, generateLoanRequest } from './negotiation.js'
+import { proveCreditScore, verifyProof } from './zkCredit.js'
 
 const BORROWER_TYPES = ['DeFi Yield Agent', 'Trading Agent', 'Tipping Agent', 'Content Agent', 'Arbitrage Agent']
 
@@ -144,6 +145,18 @@ export class LendingEngine {
 
       const scoring = this.credit.score(onChainAgent, loan.amount, this.market.volatility)
 
+      // ZK proof: prove creditScore >= MIN_CREDIT_SCORE without revealing actual score
+      let zkProof = null
+      try {
+        const creditScore = Number(onChainAgent.creditScore)
+        zkProof = await proveCreditScore(creditScore, 200)
+        if (zkProof) {
+          const valid = await verifyProof(zkProof.proof, zkProof.publicSignals)
+          zkProof.verified = valid
+          console.log(`[ZK] ${loan.borrower} credit proof: commitment=${zkProof.commitment?.slice(0,10)}… verified=${valid}`)
+        }
+      } catch {}
+
       // LLM negotiation
       const negotiated = await negotiateLoanTerms({
         lenderName:          this.lender.name,
@@ -165,6 +178,7 @@ export class LendingEngine {
 
       loan.scoring  = scoring
       loan.terms    = terms
+      loan.zkProof  = zkProof
 
       if (!terms.approved) {
         loan.status = 'rejected'
@@ -198,7 +212,7 @@ export class LendingEngine {
       const borrower = this.borrowers.find(b => b.name === loan.borrower)
       if (borrower) { borrower.activeLoans = (borrower.activeLoans || 0) + 1 }
 
-      events.push({ type: 'loan_funded', loanId: id, borrower: loan.borrower, lender: this.lender.name, amount: loan.amount, terms, txHash })
+      events.push({ type: 'loan_funded', loanId: id, borrower: loan.borrower, lender: this.lender.name, amount: loan.amount, terms, txHash, zkProof: zkProof ? { commitment: zkProof.commitment, verified: zkProof.verified } : null })
     }
     return events
   }

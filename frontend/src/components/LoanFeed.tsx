@@ -49,6 +49,7 @@ export function LoanFeed() {
                 <span>Duration: <span className="text-white">{loan.terms.durationDays}d</span></span>
                 {loan.scoring && <span>PD: <span className={loan.scoring.pd > 0.5 ? 'text-red-400' : 'text-emerald-400'}>{(loan.scoring.pd * 100).toFixed(0)}%</span></span>}
                 {loan.repaid && <span>Repaid: <span className="text-emerald-400">${loan.repaid.toLocaleString()}</span></span>}
+                {loan.zkProof?.verified && <span className="text-violet-400">🔐 ZK verified</span>}
               </div>
             )}
 
