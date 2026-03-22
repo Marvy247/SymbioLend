@@ -1,11 +1,12 @@
 import { useSymbio } from '../context/SymbioContext'
 
 const EVENT_ICON: Record<string, string> = {
-  loan_requested: '📋',
-  loan_funded:    '💰',
-  loan_rejected:  '❌',
-  repayment:      '✅',
-  default:        '⚠️',
+  loan_requested:      '📋',
+  loan_funded:         '💰',
+  loan_rejected:       '❌',
+  repayment:           '✅',
+  default:             '⚠️',
+  capital_reallocated: '♻️',
 }
 
 export function EventLog() {
@@ -33,7 +34,8 @@ export function EventLog() {
                 {e.type === 'loan_funded'    && `${e.lender} funded $${e.amount?.toLocaleString()} → ${e.borrower} @ ${(e.terms?.interestBps/100).toFixed(1)}%`}
                 {e.type === 'loan_rejected'  && `${e.borrower} rejected — ${e.reason}`}
                 {e.type === 'repayment'      && `${e.borrower} repaid $${e.amount?.toLocaleString()}${e.fullRepayment ? ' (FULL)' : ''}`}
-                {e.type === 'default'        && `${e.borrower} defaulted on loan #${e.loanId}`}
+                {e.type === 'default'             && `${e.borrower} defaulted on loan #${e.loanId}`}
+                {e.type === 'capital_reallocated' && `♻️ Capital reallocated from ${e.from} → ${e.to} ($${e.amount?.toLocaleString()}, PD ${(e.pd*100).toFixed(0)}%)`}
               </span>
             </div>
             <span className="text-slate-600 shrink-0">{new Date(e.ts).toLocaleTimeString()}</span>

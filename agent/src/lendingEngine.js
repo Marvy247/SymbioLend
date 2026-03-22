@@ -68,6 +68,10 @@ export class LendingEngine {
     const defaults = await this._checkDefaults()
     cycleEvents.push(...defaults)
 
+    // 5. Reallocate repaid capital to best available borrower
+    const realloc = await this._reallocateCapital()
+    cycleEvents.push(...realloc)
+
     for (const e of cycleEvents) this._emit(e)
     return cycleEvents
   }
@@ -266,6 +270,83 @@ export class LendingEngine {
 
       events.push({ type: 'default', loanId: id, borrower: loan.borrower })
     }
+    return events
+  }
+
+  // ── Capital reallocation ───────────────────────────────────────────────────
+  // When loans are repaid, immediately re-deploy capital to the highest-scoring
+  // borrower that has a pending loan request waiting to be funded.
+
+  async _reallocateCapital() {
+    const events = []
+
+    // Only reallocate if a loan was just repaid this cycle
+    const justRepaid = [...this.loans.values()].filter(l => l.status === 'repaid' && !l._reallocated)
+    if (justRepaid.length === 0) return events
+
+    // Find pending loans, score them, pick the best
+    const pending = [...this.loans.values()].filter(l => l.status === 'pending' && typeof l.id === 'number')
+    if (pending.length === 0) return events
+
+    // Score each pending loan by borrower credit
+    const scored = await Promise.all(pending.map(async loan => {
+      let onChainAgent = { creditScore: 500n, totalBorrowed: 0n, totalRepaid: 0n, activeLoans: 0n }
+      try {
+        const addr = this.borrowers.find(b => b.name === loan.borrower)?.address
+        if (addr) onChainAgent = await this.contract.getAgent(addr)
+      } catch {}
+      const s = this.credit.score(onChainAgent, loan.amount, this.market.volatility)
+      return { loan, scoring: s, safetyScore: s.safetyScore }
+    }))
+
+    // Pick highest safety score (lowest PD)
+    scored.sort((a, b) => b.safetyScore - a.safetyScore)
+    const best = scored[0]
+    if (!best || !best.scoring.approved) return events
+
+    // Mark repaid loans as reallocated so we don't double-count
+    justRepaid.forEach(l => { l._reallocated = true })
+
+    const { loan, scoring } = best
+    const terms = {
+      interestBps:  scoring.interestBps,
+      durationDays: 7,
+      collateralPct: 0,
+      approved:     true,
+      reasoning:    `Capital reallocated from repaid loan — PD=${(scoring.pd*100).toFixed(1)}%`,
+    }
+    loan.scoring = scoring
+    loan.terms   = terms
+
+    let txHash = null
+    if (!this._pending.has(this.lender.name)) {
+      this._pending.add(this.lender.name)
+      try {
+        txHash = await this.contract.fundLoan(
+          this.lender.name, loan.id, BigInt(loan.amount) * 1_000_000n, BigInt(terms.durationDays) * 86400n
+        )
+        this._txCount++
+        loan.status   = 'active'
+        loan.fundedAt = Date.now()
+        loan.dueAt    = Date.now() + terms.durationDays * 86400_000
+        loan.txHash   = txHash
+        const borrower = this.borrowers.find(b => b.name === loan.borrower)
+        if (borrower) borrower.activeLoans = (borrower.activeLoans || 0) + 1
+      } catch (e) {
+        console.error('[LendingEngine] realloc fundLoan failed:', e.message.slice(0, 80))
+      } finally {
+        this._pending.delete(this.lender.name)
+      }
+    }
+
+    events.push({
+      type: 'capital_reallocated',
+      from: justRepaid.map(l => l.borrower).join(', '),
+      to:   loan.borrower,
+      amount: loan.amount,
+      pd:   scoring.pd,
+      txHash,
+    })
     return events
   }
 
