@@ -30,8 +30,9 @@ export class LendingContract {
   constructor(contractAddress, tokenAddress, rpcUrl) {
     this.contractAddress = contractAddress
     this.tokenAddress    = tokenAddress
-    this.provider = new ethers.JsonRpcProvider(rpcUrl, undefined, {
-      staticNetwork: true,
+    const network = new ethers.Network('sepolia', 11155111)
+    this.provider = new ethers.JsonRpcProvider(rpcUrl, network, {
+      staticNetwork: network,
       batchMaxCount: 1,
     })
     this.signers = {}   // agentName → ethers.Wallet
