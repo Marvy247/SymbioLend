@@ -61,7 +61,13 @@ async function bootstrap() {
     console.log(`✅ Borrower ${name} (${BORROWER_TYPES[i]}) at ${addr}`)
   }
 
-  engine = new LendingEngine(lender, borrowers, contract)
+  try {
+    engine = new LendingEngine(lender, borrowers, contract)
+  } catch(e) {
+    console.error('LendingEngine init error:', e.message)
+    console.error(e.stack)
+    throw e
+  }
   console.log(`\n🌐 Lending engine online — ${borrowers.length} borrower agents\n`)
 
   // Autonomous loop

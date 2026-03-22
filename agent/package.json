@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
+    "@stablelib/ed25519": "^2.0.2",
     "@tetherto/wdk": "^1.0.0-beta.6",
     "@tetherto/wdk-pricing-bitfinex-http": "^1.0.0-beta.2",
     "@tetherto/wdk-wallet": "^1.0.0-beta.6",
@@ -20,9 +21,13 @@
     "circomlib": "^2.0.5",
     "circomlibjs": "^0.1.7",
     "cors": "^2.8.5",
+    "did-resolver": "^4.1.0",
+    "dids": "^5.0.3",
     "dotenv": "^16.4.5",
     "ethers": "^6.16.0",
     "express": "^4.21.2",
+    "key-did-provider-ed25519": "^4.0.2",
+    "key-did-resolver": "^4.0.0",
     "snarkjs": "^0.7.6",
     "zod": "^4.3.6"
   }

@@ -30,10 +30,10 @@ export class LendingEngine {
     this._pending  = new Set()   // agent names with in-flight txs
 
     // Assign W3C DIDs to all agents
-    lender.did = getAgentDID(lender.name, lender.address)
-    for (const b of borrowerAgents) b.did = getAgentDID(b.name, b.address)
-    console.log(`[DID] ${lender.name}: ${lender.did}`)
-    for (const b of borrowerAgents) console.log(`[DID] ${b.name}: ${b.did}`)
+    this.lender.did = getAgentDID(this.lender.name, this.lender.address)
+    for (const b of this.borrowers) b.did = getAgentDID(b.name, b.address)
+    console.log(`[DID] ${this.lender.name}: ${this.lender.did}`)
+    for (const b of this.borrowers) console.log(`[DID] ${b.name}: ${b.did}`)
   }
 
   // ── Market simulation ──────────────────────────────────────────────────────
